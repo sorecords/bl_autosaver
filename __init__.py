@@ -36,19 +36,17 @@ import bpy, os, datetime
 from bpy.props import StringProperty, BoolProperty
 from bpy.types import Panel
 from bpy.utils import register_class, unregister_class
+from bpy.app.handlers import persistent
 from shutil import copyfile
 
 # ---------------------------- Operator Example  ---------------------------
-
-def atsv_reset(self, context):
-    if bpy.context.window_manager.autosaver != '' and bpy.data.filepath == '':
-        bpy.context.window_manager.autosaver = ''
     
+@persistent
 def atsv_save(self, context):
-    wm = bpy.context.window_manager
-    if not wm.autosaver_on:
+    sc = bpy.context.scene
+    if not sc.autosaver_on:
         return
-    if wm.autosaver == '':
+    if sc.autosaver == '':
         project_path = bpy.data.filepath
         project = bpy.path.basename(bpy.data.filepath)
         project_name = bpy.path.display_name_from_filepath(project_path)
@@ -56,15 +54,16 @@ def atsv_save(self, context):
         autosave_dir = project_path.replace(project, atsv_name)
         if not os.path.exists(autosave_dir):
             os.mkdir(autosave_dir)
-        wm.autosaver = autosave_dir
+        sc.autosaver = autosave_dir
     bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
     project_path = bpy.data.filepath
     project_name = bpy.path.display_name_from_filepath(project_path)
-    atsv_dir = wm.autosaver
+    atsv_dir = sc.autosaver
     timing = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     new_path = os.path.join(atsv_dir, f"{project_name} {timing}.blend")
-    copyfile(project_path, new_path)    
-
+    copyfile(project_path, new_path)
+    print(f"file saved: {new_path}")
+    
 # ---------------------------- Panel Example  ---------------------------
         
     
@@ -77,16 +76,16 @@ class AUTOSAVER_PT_Panel(Panel):
     
     def draw_header(self, context):
         layout = self.layout
-        wm = context.window_manager        
+        sc = context.scene        
         col = layout.column(align = True)
-        col.prop(wm, "autosaver_on", text = '')
+        col.prop(sc, "autosaver_on", text = '')
         
     
     def draw(self, context):
         layout = self.layout
-        wm = context.window_manager        
+        sc = context.scene      
         col = layout.column(align = True)
-        col.prop(wm, "autosaver", text = '')
+        col.prop(sc, "autosaver", text = '')
         
         
 classes = [
@@ -97,18 +96,14 @@ def register():
     for cl in classes:
         register_class(cl)
     fp = ''
-    bpy.types.WindowManager.autosaver = StringProperty(subtype="DIR_PATH", default = '')
-    bpy.types.WindowManager.autosaver_on = BoolProperty(default=False)
-    if atsv_reset not in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.append(atsv_reset)
+    bpy.types.Scene.autosaver = StringProperty(subtype="DIR_PATH", default = '')
+    bpy.types.Scene.autosaver_on = BoolProperty(default=True)
     if atsv_save not in bpy.app.handlers.render_init:
         bpy.app.handlers.render_init.append(atsv_save)
     
 def unregister():
     for cl in reversed(classes):
         unregister_class(cl)
-    while atsv_reset in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(atsv_reset)
     while atsv_save in bpy.app.handlers.render_init:
         bpy.app.handlers.render_init.remove(atsv_save)
         
