@@ -27,8 +27,8 @@ bl_info = {
     "location": "Output Properties > Autosaver",
     "description": "Save copies of project before render",
     "warning": "",
-    "wiki_url": "",
-    "tracker_url": "",
+    "wiki_url": "https://github.com/sorecords/bl_autosaver/blob/main/README.md",
+    "tracker_url": "https://github.com/sorecords/bl_autosaver/issues",
     "category": "Save"
 }
 
